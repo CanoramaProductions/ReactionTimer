@@ -11,74 +11,148 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-direction: column;
       font-family: Arial, sans-serif;
       background-color: red;
       color: white;
-      font-size: 3rem;
+      font-size: 2rem;
       text-align: center;
       user-select: none;
-      cursor: pointer;
     }
-    #timer {
+    #menu, #timer, #scoreboard {
       display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      margin: 10px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
+  <div id="menu">
+    <button id="customTimeBtn">Custom Time</button>
+    <button id="customFrameBtn">Custom Time Frame</button>
+    <button id="randomFrameBtn">Random Time Frame</button>
+  </div>
   <div id="timer">00:00:00</div>
+  <div id="scoreboard">
+    <div id="highScore"></div>
+    <button id="resetScoreBtn">Reset Score</button>
+    <button id="beginBtn">Begin</button>
+  </div>
 
   <script>
     const body = document.body;
+    const menu = document.getElementById('menu');
     const timerElement = document.getElementById('timer');
+    const scoreboard = document.getElementById('scoreboard');
+    const highScoreElement = document.getElementById('highScore');
+    const resetScoreBtn = document.getElementById('resetScoreBtn');
+    const beginBtn = document.getElementById('beginBtn');
+    const customTimeBtn = document.getElementById('customTimeBtn');
+    const customFrameBtn = document.getElementById('customFrameBtn');
+    const randomFrameBtn = document.getElementById('randomFrameBtn');
+
     let startTime = null;
     let timerInterval = null;
+    let delay = 0;
+    let highScore = localStorage.getItem('highScore') || null;
 
-    // Random delay between 5-15 seconds
-    const randomDelay = Math.random() * (15 - 5) + 5; // in seconds
+    // Show the high score
+    function displayHighScore() {
+      if (highScore) {
+        highScoreElement.textContent = `High Score: ${highScore}`;
+      } else {
+        highScoreElement.textContent = '';
+      }
+    }
 
-    // Function to format time
+    // Format time as mm:ss:ms
     function formatTime(duration) {
       const milliseconds = Math.floor((duration % 1000) / 10);
       const seconds = Math.floor((duration / 1000) % 60);
       const minutes = Math.floor((duration / (1000 * 60)) % 60);
-
       return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(milliseconds).padStart(2, '0')}`;
     }
 
-    // Function to start the timer
+    // Start the timer
     function startTimer() {
       startTime = performance.now();
       timerElement.style.display = 'block';
-
       timerInterval = setInterval(() => {
         const elapsedTime = performance.now() - startTime;
         timerElement.textContent = formatTime(elapsedTime);
       }, 10);
     }
 
-    // Function to stop the timer
+    // Stop the timer
     function stopTimer() {
       clearInterval(timerInterval);
+      const finalTime = performance.now() - startTime;
+      const formattedTime = formatTime(finalTime);
+
+      if (!highScore || finalTime < parseFloat(highScore)) {
+        highScore = finalTime;
+        localStorage.setItem('highScore', finalTime);
+        highScoreElement.textContent = `New High Score: ${formattedTime}`;
+      } else {
+        highScoreElement.textContent = `High Score: ${formatTime(highScore)}`;
+      }
+
+      scoreboard.style.display = 'block';
     }
 
-    // Start green screen after random delay
-    setTimeout(() => {
-      body.style.backgroundColor = 'green';
-      startTimer();
-    }, randomDelay * 1000);
-
-    // Stop timer on tap
-    body.addEventListener('click', () => {
-      if (body.style.backgroundColor === 'green') {
-        stopTimer();
-        body.style.backgroundColor = 'red';
-
-        // Reset after 5 seconds
-        setTimeout(() => {
-          location.reload();
-        }, 5000);
-      }
+    // Reset the high score
+    resetScoreBtn.addEventListener('click', () => {
+      localStorage.removeItem('highScore');
+      highScore = null;
+      highScoreElement.textContent = '';
     });
+
+    // Begin button logic
+    beginBtn.addEventListener('click', () => {
+      location.reload();
+    });
+
+    // Red screen logic
+    function startGame() {
+      body.style.backgroundColor = 'red';
+      timerElement.style.display = 'none';
+      scoreboard.style.display = 'none';
+
+      setTimeout(() => {
+        body.style.backgroundColor = 'green';
+        startTimer();
+      }, delay * 1000);
+    }
+
+    // Event listeners for menu buttons
+    customTimeBtn.addEventListener('click', () => {
+      const time = prompt('Enter the custom time in seconds:');
+      delay = parseFloat(time) || 0;
+      menu.style.display = 'none';
+      startGame();
+    });
+
+    customFrameBtn.addEventListener('click', () => {
+      const minTime = parseFloat(prompt('Enter the minimum time in seconds:')) || 0;
+      const maxTime = parseFloat(prompt('Enter the maximum time in seconds:')) || 0;
+      delay = Math.random() * (maxTime - minTime) + minTime;
+      menu.style.display = 'none';
+      startGame();
+    });
+
+    randomFrameBtn.addEventListener('click', () => {
+      delay = Math.random() * (20 - 5) + 5; // Random between 5-20 seconds
+      menu.style.display = 'none';
+      startGame();
+    });
+
+    // Initialize
+    menu.style.display = 'block';
+    displayHighScore();
   </script>
 </body>
 </html>
