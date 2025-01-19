@@ -59,11 +59,12 @@
     let timerInterval = null;
     let delay = 0;
     let highScore = localStorage.getItem('highScore') || null;
+    let gameActive = false; // Prevents multiple clicks during a single game.
 
     // Show the high score
     function displayHighScore() {
       if (highScore) {
-        highScoreElement.textContent = `High Score: ${highScore}`;
+        highScoreElement.textContent = `High Score: ${formatTime(highScore)}`;
       } else {
         highScoreElement.textContent = '';
       }
@@ -121,12 +122,24 @@
       body.style.backgroundColor = 'red';
       timerElement.style.display = 'none';
       scoreboard.style.display = 'none';
+      gameActive = true; // Allow clicks once the game starts.
 
       setTimeout(() => {
         body.style.backgroundColor = 'green';
         startTimer();
+
+        // Allow clicking to stop the timer only after it turns green.
+        gameActive = true;
       }, delay * 1000);
     }
+
+    // Handle screen click
+    body.addEventListener('click', () => {
+      if (gameActive && body.style.backgroundColor === 'green') {
+        gameActive = false; // Prevent further clicks.
+        stopTimer();
+      }
+    });
 
     // Event listeners for menu buttons
     customTimeBtn.addEventListener('click', () => {
